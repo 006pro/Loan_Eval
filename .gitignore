@@ -26,6 +26,7 @@ node_modules/
 dist/
 build/
 .vite/
+*.tsbuildinfo
 
 # OS / IDE
 .DS_Store
