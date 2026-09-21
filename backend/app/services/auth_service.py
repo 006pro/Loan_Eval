@@ -6,7 +6,7 @@ from app.models.client_profile import ClientProfile
 from app.models.enums import AuditAction, UserRole
 from app.models.user import User
 from app.repositories import user_repository
-from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse
+from app.schemas.auth import CurrentUserOut, LoginRequest, RegisterRequest, TokenResponse
 from app.services import account_service, audit_service
 
 
@@ -27,6 +27,16 @@ def register_client(db: Session, data: RegisterRequest) -> TokenResponse:
 
     token = create_access_token(subject=str(user.id), role=user.role.value)
     return TokenResponse(access_token=token, role=user.role)
+
+
+def get_current_user_out(user: User) -> CurrentUserOut:
+    if user.role == UserRole.ADMIN and user.admin_profile is not None:
+        display_name = user.admin_profile.name
+    elif user.client_profile is not None:
+        display_name = user.client_profile.name
+    else:
+        display_name = user.email
+    return CurrentUserOut(id=user.id, email=user.email, role=user.role, display_name=display_name)
 
 
 def authenticate(db: Session, data: LoginRequest) -> TokenResponse:

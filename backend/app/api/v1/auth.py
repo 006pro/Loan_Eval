@@ -2,7 +2,9 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse
+from app.dependencies.auth import get_current_user
+from app.models.user import User
+from app.schemas.auth import CurrentUserOut, LoginRequest, RegisterRequest, TokenResponse
 from app.services import auth_service
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -22,3 +24,8 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)) -> TokenResponse
 def logout() -> None:
     # Stateless JWT: the client discards its token. No server-side session exists.
     return None
+
+
+@router.get("/me", response_model=CurrentUserOut)
+def get_me(user: User = Depends(get_current_user)) -> CurrentUserOut:
+    return auth_service.get_current_user_out(user)
