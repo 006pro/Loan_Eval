@@ -55,6 +55,10 @@ def list_loans_for_client(db: Session, client_id: int) -> list[LoanOut]:
     return [to_loan_out(loan) for loan in loan_repository.list_by_client(db, client_id)]
 
 
+def list_all_loans(db: Session, *, status_filter: LoanStatus | None = None) -> list[LoanOut]:
+    return [to_loan_out(loan) for loan in loan_repository.list_all(db, loan_status=status_filter)]
+
+
 def get_client_loan_assessed(db: Session, client_id: int, loan_id: int) -> Loan:
     """Read path that lazily marks overdue installments before returning the loan,
     since this system has no background scheduler to do it proactively."""
@@ -64,8 +68,23 @@ def get_client_loan_assessed(db: Session, client_id: int, loan_id: int) -> Loan:
     return loan
 
 
+def get_loan_assessed(db: Session, loan_id: int) -> Loan:
+    loan = get_loan_or_404(db, loan_id)
+    penalty_service.assess_loan(db, loan)
+    db.commit()
+    return loan
+
+
 def get_schedule_for_client_loan(db: Session, client_id: int, loan_id: int) -> list[RepaymentScheduleOut]:
     get_client_loan_assessed(db, client_id, loan_id)
+    return [
+        RepaymentScheduleOut.model_validate(row, from_attributes=True)
+        for row in schedule_repository.list_by_loan(db, loan_id)
+    ]
+
+
+def get_schedule_for_loan(db: Session, loan_id: int) -> list[RepaymentScheduleOut]:
+    get_loan_assessed(db, loan_id)
     return [
         RepaymentScheduleOut.model_validate(row, from_attributes=True)
         for row in schedule_repository.list_by_loan(db, loan_id)
