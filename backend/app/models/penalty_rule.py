@@ -1,4 +1,4 @@
-from sqlalchemy import Enum, ForeignKey, Numeric
+from sqlalchemy import Boolean, Enum, ForeignKey, Numeric
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -19,5 +19,6 @@ class PenaltyRule(Base, TimestampMixin):
         Enum(CalculationFrequency, native_enum=False, length=20), nullable=False
     )
     penalty_rate: Mapped[float] = mapped_column(Numeric(5, 2), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     repayment_frequency: Mapped["RepaymentFrequency"] = relationship()
