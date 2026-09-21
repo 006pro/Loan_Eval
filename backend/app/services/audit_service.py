@@ -5,6 +5,8 @@ from sqlalchemy.orm import Session
 
 from app.models.audit_log import AuditLog
 from app.models.enums import AuditAction
+from app.repositories import audit_repository
+from app.schemas.audit import AuditLogOut
 
 
 def record(
@@ -28,3 +30,7 @@ def record(
     db.add(log)
     db.flush()
     return log
+
+
+def list_recent(db: Session, *, limit: int = 200) -> list[AuditLogOut]:
+    return [AuditLogOut.model_validate(log) for log in audit_repository.list_recent(db, limit=limit)]
