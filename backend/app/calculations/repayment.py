@@ -28,23 +28,27 @@ def add_months(start: date, months: int) -> date:
     return date(year, month, day)
 
 
-def generate_schedule(
+def _amortize(
     principal: Decimal,
     annual_rate: Decimal,
-    duration_months: int,
     frequency: RepaymentFrequencyCode,
-    start_date: date,
+    due_dates: list[date],
+    first_installment_number: int = 1,
 ) -> list[ScheduleRow]:
-    n = number_of_installments(duration_months, frequency)
+    n = len(due_dates)
+    if n == 0:
+        return []
+
     step_months = FREQUENCY_MONTHS[frequency]
     r = period_interest_rate(annual_rate, frequency)
-    emi = calculate_emi(principal, annual_rate, duration_months, frequency)
+    emi = calculate_emi(principal, annual_rate, n * step_months, frequency)
 
     rows: list[ScheduleRow] = []
     balance = principal
-    for installment_number in range(1, n + 1):
+    for offset, due_date in enumerate(due_dates):
+        is_last = offset == n - 1
         interest = (balance * r).quantize(TWO_PLACES, rounding=ROUND_HALF_UP)
-        if installment_number == n:
+        if is_last:
             principal_component = balance
             installment_amount = principal_component + interest
         else:
@@ -54,10 +58,9 @@ def generate_schedule(
         if closing < 0:
             closing = Decimal("0.00")
 
-        due_date = add_months(start_date, step_months * installment_number)
         rows.append(
             ScheduleRow(
-                installment_number=installment_number,
+                installment_number=first_installment_number + offset,
                 due_date=due_date,
                 opening_principal=balance,
                 principal_component=principal_component,
@@ -69,6 +72,31 @@ def generate_schedule(
         balance = closing
 
     return rows
+
+
+def generate_schedule(
+    principal: Decimal,
+    annual_rate: Decimal,
+    duration_months: int,
+    frequency: RepaymentFrequencyCode,
+    start_date: date,
+) -> list[ScheduleRow]:
+    n = number_of_installments(duration_months, frequency)
+    step_months = FREQUENCY_MONTHS[frequency]
+    due_dates = [add_months(start_date, step_months * installment_number) for installment_number in range(1, n + 1)]
+    return _amortize(principal, annual_rate, frequency, due_dates)
+
+
+def recompute_schedule(
+    principal: Decimal,
+    annual_rate: Decimal,
+    frequency: RepaymentFrequencyCode,
+    due_dates: list[date],
+    first_installment_number: int,
+) -> list[ScheduleRow]:
+    """Re-amortize the still-unpaid installments after a prepayment. Only the rows for
+    `due_dates` (already-paid installments are excluded by the caller) are touched."""
+    return _amortize(principal, annual_rate, frequency, due_dates, first_installment_number)
 
 
 def summarize(rows: list[ScheduleRow]) -> tuple[Decimal, Decimal]:

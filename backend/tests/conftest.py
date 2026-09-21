@@ -158,3 +158,36 @@ def active_loan_type_id(client: TestClient, admin_headers: dict[str, str]) -> in
     )
     assert response.status_code == 201
     return response.json()["id"]
+
+
+@pytest.fixture()
+def active_loan(
+    client: TestClient,
+    admin_headers: dict[str, str],
+    completed_client_headers: dict[str, str],
+    active_loan_type_id: int,
+) -> dict:
+    """Submits, approves, and fee-pays a loan so it is ACTIVE with a generated schedule."""
+    application = client.post(
+        "/api/v1/loan-applications",
+        json={
+            "loan_type_id": active_loan_type_id,
+            "requested_amount": "100000",
+            "requested_duration_months": 12,
+            "requested_frequency": "MONTHLY",
+        },
+        headers=completed_client_headers,
+    ).json()
+
+    client.post(
+        f"/api/v1/admin/loan-applications/{application['id']}/approve",
+        json={"approved_amount": "100000", "approval_fee_percent": "2.5", "credit_score": 720},
+        headers=admin_headers,
+    )
+
+    loans_list = client.get("/api/v1/loans", headers=completed_client_headers).json()
+    loan = loans_list[0]
+
+    pay_fee_response = client.post(f"/api/v1/loans/{loan['id']}/fee/pay", headers=completed_client_headers)
+    assert pay_fee_response.status_code == 200
+    return pay_fee_response.json()

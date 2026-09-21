@@ -8,12 +8,15 @@ from app.models.account_transaction import AccountTransaction
 from app.models.client_profile import ClientProfile
 from app.models.enums import AccountStatus, TransactionType
 from app.models.virtual_account import VirtualAccount
+from app.repositories import account_repository
+from app.schemas.account import AccountTransactionOut, VirtualAccountOut
 
 # Every client's Virtual Account is internal to this application (no external bank
 # integration exists). Since there is no deposit/funding endpoint in the spec, a new
 # account is opened with a fixed starter balance so the full loan lifecycle (approval
 # fee payment, EMI, prepayment) can actually be exercised end-to-end.
 REGISTRATION_STARTER_BALANCE = Decimal("500000.00")
+_ACCOUNT_NOT_FOUND = "Virtual account not found"
 
 
 def create_virtual_account(db: Session, client: ClientProfile) -> VirtualAccount:
@@ -37,12 +40,28 @@ def create_virtual_account(db: Session, client: ClientProfile) -> VirtualAccount
     return account
 
 
+def get_account_out(db: Session, client_id: int) -> VirtualAccountOut:
+    account = account_repository.get_by_client_id(db, client_id)
+    if account is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, _ACCOUNT_NOT_FOUND)
+    return VirtualAccountOut.model_validate(account)
+
+
+def list_transactions_out(db: Session, client_id: int) -> list[AccountTransactionOut]:
+    account = account_repository.get_by_client_id(db, client_id)
+    if account is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, _ACCOUNT_NOT_FOUND)
+    return [
+        AccountTransactionOut.model_validate(txn) for txn in account_repository.list_transactions(db, account.id)
+    ]
+
+
 def get_locked_account_for_client(db: Session, client_id: int) -> VirtualAccount:
     account = db.execute(
         select(VirtualAccount).where(VirtualAccount.client_id == client_id).with_for_update()
     ).scalar_one_or_none()
     if account is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Virtual account not found")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, _ACCOUNT_NOT_FOUND)
     return account
 
 

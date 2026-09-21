@@ -13,8 +13,8 @@ from app.models.loan_evaluation import LoanEvaluation
 from app.models.loan_fee import LoanFee
 from app.repositories import admin_repository, loan_application_repository, loan_repository, master_repository
 from app.schemas.evaluation import AdminClientSummary, AdminLoanApplicationOut, ApprovalRequest, RejectionRequest
-from app.schemas.loan import LoanFeeOut, LoanOut
-from app.services import audit_service
+from app.schemas.loan import LoanOut
+from app.services import audit_service, loan_service
 
 
 def _admin_profile_or_404(db: Session, user_id: int):
@@ -54,35 +54,6 @@ def _to_admin_out(application: LoanApplication) -> AdminLoanApplicationOut:
         rejection_reason=application.rejection_reason,
         submitted_at=application.submitted_at,
         evaluated_at=application.evaluated_at,
-    )
-
-
-def _to_loan_out(loan: Loan) -> LoanOut:
-    fee_out = None
-    if loan.fee is not None:
-        fee_out = LoanFeeOut(
-            id=loan.fee.id,
-            fee_percentage=loan.fee.fee_percentage,
-            fee_amount=loan.fee.fee_amount,
-            status=loan.fee.status,
-            calculated_at=loan.fee.calculated_at,
-            paid_at=loan.fee.paid_at,
-        )
-    return LoanOut(
-        id=loan.id,
-        application_id=loan.application_id,
-        loan_type_id=loan.loan_type_id,
-        loan_type_name=loan.loan_type.name,
-        approved_amount=loan.approved_amount,
-        interest_rate=loan.interest_rate,
-        duration_months=loan.duration_months,
-        repayment_frequency=loan.repayment_frequency,
-        emi_amount=loan.emi_amount,
-        outstanding_principal=loan.outstanding_principal,
-        start_date=loan.start_date,
-        end_date=loan.end_date,
-        status=loan.status,
-        fee=fee_out,
     )
 
 
@@ -183,8 +154,7 @@ def approve_application(
     )
 
     db.commit()
-    db.refresh(loan)
-    return _to_loan_out(loan_repository.get_by_id(db, loan.id))
+    return loan_service.to_loan_out(loan_repository.get_by_id(db, loan.id))
 
 
 def reject_application(
