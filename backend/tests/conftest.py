@@ -125,3 +125,36 @@ def client_token(client: TestClient) -> str:
 @pytest.fixture()
 def client_headers(client_token: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {client_token}"}
+
+
+@pytest.fixture()
+def completed_client_headers(client: TestClient, client_headers: dict[str, str]) -> dict[str, str]:
+    response = client.put(
+        "/api/v1/clients/me",
+        json={
+            "phone": "9876543210",
+            "address": "221B Baker Street",
+            "monthly_income": "60000",
+            "credit_score": 720,
+        },
+        headers=client_headers,
+    )
+    assert response.status_code == 200
+    return client_headers
+
+
+@pytest.fixture()
+def active_loan_type_id(client: TestClient, admin_headers: dict[str, str]) -> int:
+    response = client.post(
+        "/api/v1/admin/master/loan-types",
+        json={
+            "name": "Personal Loan",
+            "description": "Unsecured personal loan",
+            "interest_rate": "12.00",
+            "min_amount": "10000",
+            "max_amount": "500000",
+        },
+        headers=admin_headers,
+    )
+    assert response.status_code == 201
+    return response.json()["id"]
