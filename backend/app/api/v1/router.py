@@ -6,6 +6,7 @@ from app.api.v1 import (
     admin_loan_applications,
     admin_loans,
     admin_master,
+    admin_users,
     auth,
     clients,
     loan_applications,
@@ -22,5 +23,6 @@ api_router.include_router(admin_loan_applications.router)
 api_router.include_router(admin_loans.router)
 api_router.include_router(admin_master.router)
 api_router.include_router(admin_audit_logs.router)
+api_router.include_router(admin_users.router)
 api_router.include_router(loans.router)
 api_router.include_router(accounts.router)

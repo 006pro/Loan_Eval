@@ -259,3 +259,11 @@ export interface AuditLog {
   new_value: string | null;
   created_at: string;
 }
+
+export interface AdminUser {
+  id: number;
+  email: string;
+  name: string;
+  employee_id: string;
+  created_at: string;
+}

@@ -6,6 +6,7 @@ const NAV_ITEMS = [
   { to: "/admin/applications", label: "Loan Applications" },
   { to: "/admin/loans", label: "Loans" },
   { to: "/admin/master", label: "Master Configuration" },
+  { to: "/admin/admins", label: "Admin Users" },
   { to: "/admin/audit-logs", label: "Audit Logs" },
 ];
 

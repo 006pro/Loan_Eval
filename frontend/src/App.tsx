@@ -25,6 +25,7 @@ import { LoansPage as AdminLoansPage } from "./pages/admin/LoansPage";
 import { LoanDetailsPage as AdminLoanDetailsPage } from "./pages/admin/LoanDetailsPage";
 import { MasterConfigPage } from "./pages/admin/MasterConfigPage";
 import { AuditLogsPage } from "./pages/admin/AuditLogsPage";
+import { AdminUsersPage } from "./pages/admin/AdminUsersPage";
 
 function RootRedirect() {
   const { user, loading } = useAuth();
@@ -64,6 +65,7 @@ function AppRoutes() {
           <Route path="/admin/loans" element={<AdminLoansPage />} />
           <Route path="/admin/loans/:id" element={<AdminLoanDetailsPage />} />
           <Route path="/admin/master" element={<MasterConfigPage />} />
+          <Route path="/admin/admins" element={<AdminUsersPage />} />
           <Route path="/admin/audit-logs" element={<AuditLogsPage />} />
         </Route>
       </Route>

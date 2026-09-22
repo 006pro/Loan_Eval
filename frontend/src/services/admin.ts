@@ -1,6 +1,7 @@
 import { api } from "./api";
 import type {
   AdminLoanApplication,
+  AdminUser,
   ApplicationStatus,
   ApprovalFeeRule,
   ApprovalRequest,
@@ -101,4 +102,19 @@ export function getLoanSchedule(id: number): Promise<RepaymentScheduleRow[]> {
 
 export function listAuditLogs(limit = 200): Promise<AuditLog[]> {
   return api.get<AuditLog[]>(`/admin/audit-logs?limit=${limit}`);
+}
+
+export function listAdmins(): Promise<AdminUser[]> {
+  return api.get<AdminUser[]>("/admin/admins");
+}
+
+export interface AdminCreateInput {
+  email: string;
+  password: string;
+  name: string;
+  employee_id: string;
+}
+
+export function createAdmin(payload: AdminCreateInput): Promise<AdminUser> {
+  return api.post<AdminUser>("/admin/admins", payload);
 }
